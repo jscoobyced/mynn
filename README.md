@@ -1,0 +1,1 @@
+Dockerfile for MongoDB, Yarn, Nodejs and netcore.
