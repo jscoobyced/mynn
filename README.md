@@ -1,1 +1,1 @@
-Dockerfile for MariaDB and netcore runtime.
+Dockerfile for MongoDB and netcore runtime.

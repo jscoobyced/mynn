@@ -1,43 +1,32 @@
 # Setup system
-FROM debian:stretch-slim
+FROM ubuntu:latest
+RUN sed -i 's/archive.ubuntu.com/th.archive.ubuntu.com/g' /etc/apt/sources.list
 ENV DEBIAN_FRONTEND noninteractive
-#RUN groupadd -r mysql && useradd -r -g mysql mysql
+RUN groupadd -r mongodb && useradd -r -g mongodb mongodb
 
-## Install dependencies packages
-RUN set -ex; apt-get -qq update && apt-get -qq upgrade
-RUN set -ex; apt-get install -qqy --no-install-recommends \
-        curl gnupg vim ca-certificates apt-transport-https \
-        software-properties-common dirmngr wget
-
-# Install Netcore
-RUN set -ex; wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > microsoft.asc.gpg
-RUN set -ex; mv microsoft.asc.gpg /etc/apt/trusted.gpg.d/
-RUN set -ex; wget -q https://packages.microsoft.com/config/debian/9/prod.list
-RUN set -ex; mv prod.list /etc/apt/sources.list.d/microsoft-prod.list
-RUN set -ex; chown root:root /etc/apt/trusted.gpg.d/microsoft.asc.gpg
-RUN set -ex; chown root:root /etc/apt/sources.list.d/microsoft-prod.list
-RUN set -ex; apt-get -qq update
-RUN echo mariadb-server mysql-server/root_password password 'blablabla' | debconf-set-selections
-RUN echo mariadb-server mysql-server/root_password_again password 'blablabla' | debconf-set-selections
-RUN set -ex; apt-get install -qqy mariadb-server aspnetcore-runtime-2.2
-
-# Confirgure MariaDB
-RUN set -ex; sed -ri 's/^user\s/#&/' /etc/mysql/my.cnf /etc/mysql/conf.d/*; \
-        rm -rf /var/lib/mysql; \
-        mkdir -p /var/lib/mysql /var/run/mysqld /etc/mysql/docker.conf.d /docker-entrypoint-initdb.d; \
-        chown -R mysql:mysql /var/lib/mysql /var/run/mysqld /etc/mysql; \
-        chmod 777 /var/run/mysqld; \
-        find /etc/mysql/ -name '*.cnf' -print0 \
-		| xargs -0 grep -lZE '^(bind-address|log)' \
-		| xargs -rt -0 sed -Ei 's/^(bind-address|log)/#&/'; \
-        echo '[mysqld]\nskip-host-cache\nskip-name-resolve' > /etc/mysql/conf.d/docker.cnf
-RUN set -ex; echo "!includedir /etc/mysql/docker.conf.d"
+## Install packages
+RUN apt-get -qq update
+RUN apt-get install -qqy --no-install-recommends apt-utils
+RUN apt-get -qq upgrade
+RUN apt-get install -qqy --no-install-recommends \
+    curl gnupg vim ca-certificates apt-transport-https \
+    software-properties-common
+RUN curl -o /tmp/server-4.0.asc -k -L https://www.mongodb.org/static/pgp/server-4.0.asc
+RUN apt-key add /tmp/server-4.0.asc
+RUN echo "deb [ arch=amd64 ] https://repo.mongodb.org/apt/ubuntu bionic/mongodb-org/4.0 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-4.0.list
+RUN rm /tmp/server-4.0.asc
+RUN curl -o /tmp/packages-microsoft-prod.deb -k -L https://packages.microsoft.com/config/ubuntu/18.04/packages-microsoft-prod.deb
+RUN dpkg -i /tmp/packages-microsoft-prod.deb
+RUN add-apt-repository universe
+RUN apt-get -qq update
+RUN apt-get install -qqy \
+        mongodb-org-server mongodb-org-tools mongodb-org-shell \
+        aspnetcore-runtime-2.2
 
 ## Clean-up
-RUN set -ex; rm -rf /var/lib/apt/lists/*
-RUN set -ex; apt-get -y purge ca-certificates curl wget
-RUN set -ex; apt-get -y autoremove
-RUN set -ex; apt-get -y clean
-
-## Start
-VOLUME /var/lib/mysql /docker-entrypoint-initdb.d /etc/mysql/docker.conf.d/
+RUN rm -rf /var/lib/apt/lists/*
+RUN rm -rf /var/lib/mongodb
+RUN apt-get clean
+RUN mkdir -p /data/db /data/configdb /data/scripts
+RUN chown -R mongodb:mongodb /data/db /data/configdb /data/scripts
+VOLUME /data/db /data/configdb /data/scripts
