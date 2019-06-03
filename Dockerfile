@@ -1,13 +1,13 @@
 # Setup system
 FROM debian:stretch-slim
 ENV DEBIAN_FRONTEND noninteractive
-#RUN groupadd -r mysql && useradd -r -g mysql mysql
 
 ## Install dependencies packages
 RUN set -ex; apt-get -qq update && apt-get -qq upgrade
 RUN set -ex; apt-get install -qqy --no-install-recommends \
         curl gnupg vim ca-certificates apt-transport-https \
         software-properties-common dirmngr wget
+RUN set -ex; update-ca-certificates
 
 # Install Netcore
 RUN set -ex; wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > microsoft.asc.gpg
@@ -38,7 +38,6 @@ RUN set -ex; rm -rf /var/lib/apt/lists/*
 RUN set -ex; apt-get -y purge ca-certificates curl wget
 RUN set -ex; apt-get -y autoremove
 RUN set -ex; apt-get -y clean
-RUN set -ex; update-ca-certificates
 
 ## Start
 VOLUME /var/lib/mysql /docker-entrypoint-initdb.d /etc/mysql/docker.conf.d/
