@@ -38,6 +38,7 @@ RUN set -ex; rm -rf /var/lib/apt/lists/*
 RUN set -ex; apt-get -y purge ca-certificates curl wget
 RUN set -ex; apt-get -y autoremove
 RUN set -ex; apt-get -y clean
+RUN set -ex; update-ca-certificates
 
 ## Start
 VOLUME /var/lib/mysql /docker-entrypoint-initdb.d /etc/mysql/docker.conf.d/
