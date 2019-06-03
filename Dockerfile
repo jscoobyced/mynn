@@ -34,7 +34,6 @@ RUN set -ex; echo "!includedir /etc/mysql/docker.conf.d"
 
 ## Clean-up
 RUN set -ex; rm -rf /var/lib/apt/lists/*
-RUN set -ex; apt-get -y purge ca-certificates curl wget
 RUN set -ex; apt-get -y autoremove
 RUN set -ex; apt-get -y clean
 
